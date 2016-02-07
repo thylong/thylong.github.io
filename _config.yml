@@ -2,7 +2,7 @@ permalink   : /:categories/:year/:title/
 markdown    : kramdown
 highlighter : pygments
 
-paginate: 2 #6
+paginate: 4 #6
 comments: true
 paginate_path: "/page/:num"
 
@@ -16,27 +16,27 @@ cover: /assets/images/default-cover.png
 
 # site title, description, meta_description, meta_keywords
 # Details for the RSS feed generator
-name: Mug Jekyll theme
-title: Mug
-description: "A free Jekyll theme for download"
-keywords: "Jekyll, theme, mug, free, download, SEO, blog, web"
-url: http://nandomoreira.me
-baseurl: "/mug"
-domain_name: nandomoreira.me
+name: Thylong
+title: blog
+description: "A technical blog of a Core Developer"
+keywords: "Python, microservices, go, docker, mongo, postgreSQL"
+url: http://thylong.github.io
+baseurl: ""
+domain_name: thylong.github.io
 # google_analytics: UA-52446115-1
-repo: http://github.com/nandomoreirame/mug
-disqus_shortname: "fernandomoreira"
+repo: http://github.com/thylong/thylong.github.io
+disqus_shortname: "thylonggithubio"
 
 author:
-  name      : Fernando Moreira
+  name      : Théotime Leveque
   image     : /assets/images/author.jpg
-  email     : nandomoreira.me@gmail.com
-  url       : http://nandomoreira.me
-  facebook  : http://facebook.com/fernando.dev
-  twitter   : http://twitter.com/nandomoreirame
-  instagram : http://instagram.com/nandomoreira.me
-  github    : http://github.com/nandomoreirame
-  linkedin  : http://linkedin.com/in/nandomoreirame
-  bio       : "Desenvolvedor Front-end/Wordpress entusiasta de performance, design responsivo e usabilidade, sempre em busca do melhor projeto e de um bom café."
+  email     : theotime.leveque@gmail.com
+  url       : http://github.com/thylong
+  facebook  : http://facebook.com/theotime.leveque
+  twitter   : http://twitter.com/thylnheo
+  instagram : http://instagram.com/theotime.leveque
+  github    : http://github.com/thylong
+  linkedin  : https://www.linkedin.com/pub/th%C3%A9otime-l%C3%A9v%C3%A8que/46/66/496
+  bio       : "Core Developer, Python fan and art enthousiast"
 
 exclude: ["gulp", "node_modules", "bower", "bower_components", "config.rb", "src", "Gemfile", "Gemfile.lock", ".rvmrc", ".rbenv-version", "package.json", "gulpfile.js", "README.md", "Rakefile", "changelog.md"]
