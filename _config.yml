@@ -20,10 +20,10 @@ name: Thylong
 title: blog
 description: "A technical blog of a Core Developer"
 keywords: "Python, microservices, go, docker, mongo, postgreSQL"
-url: http://thylong.github.io
+url: http://thylong.com
 baseurl: ""
-domain_name: thylong.github.io
-# google_analytics: UA-52446115-1
+domain_name: thylong.com
+google_analytics: UA-85600279-1
 repo: http://github.com/thylong/thylong.github.io
 disqus_shortname: "thylonggithubio"
 
@@ -40,3 +40,6 @@ author:
   bio       : "Core Developer, Python fan and art enthousiast"
 
 exclude: ["gulp", "node_modules", "bower", "bower_components", "config.rb", "src", "Gemfile", "Gemfile.lock", ".rvmrc", ".rbenv-version", "package.json", "gulpfile.js", "README.md", "Rakefile", "changelog.md"]
+
+gems:
+  - jekyll-sitemap
