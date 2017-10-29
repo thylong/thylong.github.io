@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+<title> Deploying from Travis-CI to Google Container Engine | blog</title>
+<meta name="description" content="A guide through survival CI scripting">
+<meta name="keywords" content="gce, google, kubectl, kubernetes, docker, container, travis, ci">
+<link rel="stylesheet" href="/css/main.css">
+<link rel="canonical" href="http://thylong.com/ci/2016/deploying-from-travis-to-gce/">
+<link rel="alternate" type="application/rss+xml" title="blog" href="http://thylong.com/feed.xml" />
+<script type="text/javascript">
+var _gaq = _gaq || [];
+_gaq.push(['_setAccount', 'UA-85600279-1']);
+_gaq.push(['_trackPageview']);
+(function() {
+  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+})();
+</script>
+<script>base_url = "";</script>
+  </head>
+  <body class="single">
+    <main class="main-container">
+        <header class="site-header">
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="/about">about</a></li>
+        <!-- <li><a href="http://github.com/thylong/about" target="_blank">the author</a></li> -->
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+      <h1 class="post-title">Deploying from Travis-CI to Google Container Engine</h1>
+      <p class="post-meta">Oct 12, 2016</p>
+  </div>
+</header>
+        <section class="main-content">
+          <article class="post">
+  <div class="post-content container">
+    <h2>Deploying from Travis-CI to Google Container Engine</h2>
+<p><a href="https://travis-ci.com">Travis-ci</a> is a great <a href="https://en.wikipedia.org/wiki/Continuous_integration">CI</a> tool.
+In comparison to other solutions, it has the advantage of being free for Open Source projects and is well documented.</p>
+<p>This is why I’ve been using it for a while and more recently with <a href="http://regexrace.org">regexrace</a>, a project hosted in <a href="https://cloud.google.com/container-engine/">Google Container Engine cluster</a>.
+Since <a href="http://kubernetes.io/">Kubernetes</a> abstracts much of the deployment and management processes, the only thing we have to handle is how to trigger the deployment.</p>
+<p>Which is incredibly simple once you’ve setup the gcloud CLI :</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">kubectl apply -f my_replica_controller_config.yml
+kubectl rolling-update my_replica_controller --image<span class="o">=</span>gcr.io/my_project/my_project:the_project_version --image-pull-policy Always</code></pre></div>
+<p>But if you try to create a bash script and trigger it from Travis you may encounter these errors :</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">Unable to connect to the server: dial tcp &lt;your_cluster_ip&gt;: i/o timeout
+<span class="c"># OR</span>
+error: You must be logged in to the server <span class="o">(</span>the server has asked <span class="k">for</span> the client to provide credentials<span class="o">)</span></code></pre></div>
+<p>To get rid of these errors, we’ll have to ensure kubectl is using the right credentials every time we use it.</p>
+<h3>If you didn't set up travis yet</h3>
+<p>To set up gcloud in Travis and push the Docker build to <a href="https://cloud.google.com/container-registry/">Google Container Registry</a>, you should either read <a href="http://scottsmerchek.com/2015/07/24/pushing-to-google-container-registry-from-circleci/">the good article</a> of Scott Smerchek or (the very-fast way),
+to copy/paste the following lines and set up the related environment variables in your Travis project settings :</p>
+<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="l-Scalar-Plain">cache</span><span class="p-Indicator">:</span>
+  <span class="l-Scalar-Plain">directories</span><span class="p-Indicator">:</span>
+    <span class="p-Indicator">-</span> <span class="s">&quot;$HOME/google-cloud-sdk/&quot;</span>
+<span class="l-Scalar-Plain">after_success</span><span class="p-Indicator">:</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">if [ ! -d &quot;$HOME/google-cloud-sdk/bin&quot; ]; then rm -rf $HOME/google-cloud-sdk; curl https://sdk.cloud.google.com | bash; fi</span>
+  <span class="c1"># Add gcloud to $PATH</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">source /home/travis/google-cloud-sdk/path.bash.inc</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">gcloud version</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">gcloud --quiet components update kubectl</span>
+  <span class="c1"># Auth flow</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">echo $GCLOUD_KEY | base64 --decode &gt; gcloud.p12</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">gcloud auth activate-service-account $GCLOUD_EMAIL --key-file gcloud.p12</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">ssh-keygen -f ~/.ssh/google_compute_engine -N &quot;&quot;</span>
+  <span class="c1"># Push to Google container registry</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">docker build -t gcr.io/$CLOUDSDK_CORE_PROJECT/$CLOUDSDK_CORE_PROJECT:v1 .</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">gcloud docker push gcr.io/$CLOUDSDK_CORE_PROJECT/$CLOUDSDK_CORE_PROJECT:v1 &gt; /dev/null</span>
+  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">gcloud container clusters get-credentials $CLOUDSDK_CORE_PROJECT</span></code></pre></div>
+<p>Related environment variables :</p>
+<table>
+  <thead>
+    <tr>
+      <th>Env variables</th>
+      <th style="text-align: left">Content</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>GCLOUD_KEY</td>
+      <td style="text-align: left"><code>base64-encoded version of project_name-xxxxx.json</code></td>
+    </tr>
+    <tr>
+      <td>GCLOUD_EMAIL</td>
+      <td style="text-align: left"><code>{string_of_characters}@developer.gserviceaccount.com</code></td>
+    </tr>
+    <tr>
+      <td>CLOUDSDK_CORE_DISABLE_PROMPTS</td>
+      <td style="text-align: left"><code>1</code></td>
+    </tr>
+    <tr>
+      <td>CLOUDSDK_CORE_PROJECT</td>
+      <td style="text-align: left"><code>your_project_name_on_gcloud</code></td>
+    </tr>
+    <tr>
+      <td>CLOUDSDK_COMPUTE_ZONE</td>
+      <td style="text-align: left"><code>us-east1-b</code> <em>(for example)</em></td>
+    </tr>
+    <tr>
+      <td>GKE_USERNAME</td>
+      <td style="text-align: left"><code>the_cluster_username</code></td>
+    </tr>
+    <tr>
+      <td>GKE_PASSWORD</td>
+      <td style="text-align: left"><code>the_cluster_password</code></td>
+    </tr>
+    <tr>
+      <td>GKE_SERVER</td>
+      <td style="text-align: left"><code>the_cluster_ip</code></td>
+    </tr>
+  </tbody>
+</table>
+<h3>Let's fix the kubectl command</h3>
+<p>After getting all of these errors, I tried to get some debug logs and looked into the gcloud manual pages and Github issues. Finally, I found an explanation on <a href="https://github.com/kubernetes/kubernetes/issues/28612">a Github issue</a> and one of the last comment of zeg-io.</p>
+<blockquote>
+  <p>Your ~/.kube/config is missing some value for authentication. To resolve this, run the command below on your gcloud shell (Google Console):
+$ export GOOGLE_APPLICATION_CREDENTIALS=”/path/to/keyfile.json”</p>
+  <p>Next, you’ll need to run the get-credentials command below again to fetch credentials for a running cluster.
+$ gcloud container clusters get-credentials project-cluster-1 –zone us-central1-c</p>
+  <p>Then, you may now run ‘kubectl proxy’ command again and let me know if you’re still having trouble.</p>
+</blockquote>
+<p>So,</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">gcloud container clusters get-credentials <span class="nv">$CLOUDSDK_CORE_PROJECT</span></code></pre></div>
+<p>requires you to store a JSON file containing the credentials.</p>
+<p>As we have it stored in the <code>$GCLOUD_KEY</code> environment variable and we decoded it into a <code>gcloud.p12</code> file, we can set the content of <code>$GOOGLE_APPLICATION_CREDENTIALS</code> to the path of that file.</p>
+<p>For example :</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$GOOGLE_APPLICATION_CREDENTIALS</span><span class="o">=</span><span class="s2">&quot;/home/travis/gopath/src/github.com/thylong/regexrace/gcloud.p12&quot;</span></code></pre></div>
+<p>The final result can be seen <a href="http://github.com/thylong/regexrace">here</a>.</p>
+<p>Enjoy !
+Don’t hesitate to comment / open pull requests or issues on the regexrace project.</p>
+    <aside class="share">
+      <span>Share this: </span>
+      <a href="http://twitter.com/share?text=Deploying from Travis-CI to Google Container Engine&amp;url=http://thylong.com/ci/2016/deploying-from-travis-to-gce/&amp;hashtags=web,dev,blog,soudev&amp;via=thylnheo"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+      <a href="https://www.facebook.com/sharer/sharer.php?u=http://thylong.com/ci/2016/deploying-from-travis-to-gce/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+    </aside>
+  </div>
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+      <script type="text/javascript">
+        var disqus_shortname = 'thylonggithubio';
+        var disqus_identifier = '/ci/2016/deploying-from-travis-to-gce';
+        var disqus_title = 'Deploying from Travis-CI to Google Container Engine';
+        var disqus_url = 'http://thylong.com/ci/2016/deploying-from-travis-to-gce/';
+        /*var disqus_developer = 1;*/
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+</article>
+        </section>
+<div class="clearfix"></div>
+<footer class="site-footer txt-center">
+  <hr>
+  <ul class="social">
+  </ul>
+  <small>&copy; 2017 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+</footer>
+    </main>
+    <a href="http://github.com/thylong/thylong.github.io" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

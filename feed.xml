@@ -1,0 +1,475 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>blog</title>
+    <description>A technical blog of a Core Developer</description>
+    <link>http://thylong.com/</link>
+    <atom:link href="http://thylong.com/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Sun, 29 Oct 2017 18:34:01 +0100</pubDate>
+    <lastBuildDate>Sun, 29 Oct 2017 18:34:01 +0100</lastBuildDate>
+    <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Debug frozen Fish shell history</title>
+        <description>&lt;h2&gt;Debug frozen Fish shell history&lt;/h2&gt;
+
+&lt;p&gt;If you’re reading that article right now, I assume you’re already using fish as I do.
+This is really a great tool despite that it sometimes misses autocompletions. I feel more productive since I started to use it as my default shell.&lt;/p&gt;
+
+&lt;p&gt;If you don’t use it yet, I’m not saying you should because it comes with good and bad sides.
+Check it out &lt;a href=&quot;http://fishshell.com&quot;&gt;here&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;It always worked great until one day, when I figured out that whenever I was using the &lt;code&gt;history&lt;/code&gt; command, the prompt was freezing indefinitely.&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Examples of freezing commands&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;history&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; grep &lt;span class=&quot;s1&quot;&gt;&amp;#39;mongo&amp;#39;&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;history &lt;/span&gt;search &lt;span class=&quot;s1&quot;&gt;&amp;#39;mongo&amp;#39;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;This is really painful as you cannot always remember what you typed to connect to a database, what was the last package you installed using a particular package manager or whatever.&lt;/p&gt;
+
+&lt;h3&gt;Debugging Fish&#39;s behavior&lt;/h3&gt;
+
+&lt;p&gt;Thankfully, Fish comes with a set of handy debugging options.
+You can execute a command and increase the verbosity of the output.
+With the history command it becomes :&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# o -c or --command=COMMANDS evaluate the specified commands instead of reading from the commandline&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# o -d or --debug-level=DEBUG_LEVEL specify the verbosity level of fish. A higher number means higher verbosity. The default level is 1.&lt;/span&gt;
+fish -d &lt;span class=&quot;m&quot;&gt;4&lt;/span&gt; -c &lt;span class=&quot;nb&quot;&gt;history&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;The output must look something like this :&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;...
+&amp;lt;4&amp;gt; fish: io_buffer_t::read: blocking &lt;span class=&quot;nb&quot;&gt;read &lt;/span&gt;on fd 3
+&amp;lt;4&amp;gt; fish: Exec job &lt;span class=&quot;s1&quot;&gt;&amp;#39;isatty stdout&amp;#39;&lt;/span&gt; with id 2
+&amp;lt;4&amp;gt; fish: Exec job &lt;span class=&quot;s1&quot;&gt;&amp;#39;set -l fd 0&amp;#39;&lt;/span&gt; with id 3
+&amp;lt;3&amp;gt; fish: Skipping fork: no output &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; internal &lt;span class=&quot;nb&quot;&gt;builtin&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;set&amp;#39;&lt;/span&gt;
+&amp;lt;3&amp;gt; fish: Set status of &lt;span class=&quot;nb&quot;&gt;set&lt;/span&gt; -l fd &lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; to &lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; using short circuit
+&amp;lt;3&amp;gt; fish: Job is constructed
+&amp;lt;4&amp;gt; fish: Continue job 3, gid &lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;set&lt;/span&gt; -l fd 0&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;, COMPLETED, NON-INTERACTIVE
+&amp;lt;4&amp;gt; fish: Exec job &lt;span class=&quot;s1&quot;&gt;&amp;#39;count $argv &amp;gt;/dev/null&amp;#39;&lt;/span&gt; with id 3
+&amp;lt;2&amp;gt; fish: Fork &lt;span class=&quot;c&quot;&gt;#56, pid 91785: internal builtin for &amp;#39;count&amp;#39;&lt;/span&gt;
+&amp;lt;3&amp;gt; fish: Job is constructed
+&amp;lt;4&amp;gt; fish: Continue job 3, gid &lt;span class=&quot;m&quot;&gt;91658&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;count &lt;span class=&quot;nv&quot;&gt;$argv&lt;/span&gt; &amp;gt;/dev/null&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;, UNCOMPLETED, NON-INTERACTIVE
+&amp;lt;4&amp;gt; fish: Exec job &lt;span class=&quot;s1&quot;&gt;&amp;#39;set fd 1&amp;#39;&lt;/span&gt; with id 3
+&amp;lt;3&amp;gt; fish: Skipping fork: no output &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; internal &lt;span class=&quot;nb&quot;&gt;builtin&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;set&amp;#39;&lt;/span&gt;
+&amp;lt;3&amp;gt; fish: Set status of &lt;span class=&quot;nb&quot;&gt;set &lt;/span&gt;fd &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt; to &lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; using short circuit
+&amp;lt;3&amp;gt; fish: Job is constructed
+&amp;lt;4&amp;gt; fish: Continue job 3, gid &lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;set &lt;/span&gt;fd 1&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;, COMPLETED, NON-INTERACTIVE
+&amp;lt;3&amp;gt; fish: path_get_path&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;test&amp;#39;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&amp;lt;4&amp;gt; fish: Exec job &lt;span class=&quot;s1&quot;&gt;&amp;#39;command test -t &amp;quot;$fd&amp;quot;&amp;#39;&lt;/span&gt; with id 3
+&amp;lt;4&amp;gt; fish: env_export_arr&lt;span class=&quot;o&quot;&gt;()&lt;/span&gt; recalc
+&amp;lt;2&amp;gt; fish: Fork &lt;span class=&quot;c&quot;&gt;#57, pid 91786: spawn external command &amp;#39;/Users/hello/www/repositories/bin/test&amp;#39; from &amp;#39;&amp;lt;no file&amp;gt;&amp;#39;&lt;/span&gt;
+&amp;lt;3&amp;gt; fish: Job is constructed
+&amp;lt;4&amp;gt; fish: Continue job 3, gid &lt;span class=&quot;m&quot;&gt;91658&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;command test&lt;/span&gt; -t &lt;span class=&quot;s2&quot;&gt;&amp;quot;$fd&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;, UNCOMPLETED, NON-INTERACTIVE&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;We can see in this case that the blocking subroutine is a command executing the program called &lt;code&gt;test&lt;/code&gt;, located in &lt;code&gt;/Users/hello/www/repositories/bin/test&lt;/code&gt;.
+If I reset the &lt;code&gt;$PATH&lt;/code&gt; command to its original value, the test command point to &lt;code&gt;/bin/test&lt;/code&gt;&lt;/p&gt;
+
+&lt;h3&gt;Looking for an explanation&lt;/h3&gt;
+
+&lt;p&gt;Here is the content of my &lt;code&gt;$PATH&lt;/code&gt; environment variable :&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;hello@wks-156 ~&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$PATH&lt;/span&gt;
+/Users/hello/www/repositories/bin /usr/local/sbin /opt/google-cloud-sdk/bin /usr/local/bin /usr/bin /bin /usr/sbin /sbin /opt/X11/bin /usr/local/go/bin /usr/local/MacGPG2/bin /usr/local/bin /Users/hello/anaconda/bin&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code&gt;/Users/hello/www/repositories/bin&lt;/code&gt; is pointing to my &lt;code&gt;$GOBIN&lt;/code&gt; directory. Meaning it contains all the built GO executables. The &lt;code&gt;go test&lt;/code&gt; is one of them and is present as &lt;code&gt;$PWD/test&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;And If we read the PATH environment variable official definition :&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;This variable shall represent the sequence of path prefixes that certain functions and utilities apply in searching for an executable file known only by a filename. The prefixes shall be separated by a colon ( ‘:’ ). When a non-zero-length prefix is applied to this filename, a slash shall be inserted between the prefix and the filename. A zero-length prefix is a legacy feature that indicates the current working directory. It appears as two adjacent colons ( “::” ), as an initial colon preceding the rest of the list, or as a trailing colon following the rest of the list. A strictly conforming application shall use an actual pathname (such as .) to represent the current working directory in PATH . &lt;code&gt;The list shall be searched from beginning to end&lt;/code&gt;, applying the filename to each prefix, until an executable file with the specified name and appropriate execution permissions is found. If the pathname being sought contains a slash, the search through the path prefixes shall not be performed. If the pathname begins with a slash, the specified path is resolved (see Pathname Resolution). If PATH is unset or is set to null, the path search is implementation-defined.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;It’s now clear.
+The first command found in the PATH directories is the one that will be triggered by the shell (Fish).
+In my case, the go programs were prioritized over the built in programs.&lt;/p&gt;
+
+&lt;p&gt;To summarize, any modification to PATH, CDPATH, GOPATH or other “path like” variable should be applied like this :&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nb&quot;&gt;set&lt;/span&gt; -gx PATH &lt;span class=&quot;nv&quot;&gt;$PATH&lt;/span&gt; /Users/hello/www/repositories/bin&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;A good slap in the face to remember the usage of this variable.
+I hope that I will help some of you !&lt;/p&gt;
+
+</description>
+        <pubDate>Fri, 02 Dec 2016 10:00:00 +0100</pubDate>
+        <link>http://thylong.com/debug/2016/fish-history-frozen/</link>
+        <guid isPermaLink="true">http://thylong.com/debug/2016/fish-history-frozen/</guid>
+        
+        
+        <category>debug</category>
+        
+      </item>
+    
+      <item>
+        <title>Mocking Mongo in Golang</title>
+        <description>&lt;h2&gt;Mocking Mongo in Golang&lt;/h2&gt;
+
+&lt;p&gt;People coming from non-statically typed languages might be lost when it comes to mocking things in &lt;a href=&quot;http://www.unixstickers.com/image/cache/data/stickers/golang/golang.sh-600x600.png&quot;&gt;Golang&lt;/a&gt;.
+This is especially true if you come to Go with a Python background and are used to using Python’s wonderful &lt;a href=&quot;https://docs.python.org/3/library/unittest.mock.html&quot;&gt;mock&lt;/a&gt; built-in library.
+Although thanks to the power of interfaces and the great design of &lt;a href=&quot;https://labix.org/mgo&quot;&gt;Mgo&lt;/a&gt; driver, it’s relatively simple to Mock it.&lt;/p&gt;
+
+&lt;h3&gt;Let&#39;s go&lt;/h3&gt;
+&lt;p&gt;First, let’s notice that the commonly used Mgo methods accept a pointer receiver and return a pointer receiver of the same package.&lt;/p&gt;
+
+&lt;p&gt;For example, look at these signatures :&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;ul&gt;
+    &lt;li&gt;func Dial(url string) (*Session, error)&lt;/li&gt;
+    &lt;li&gt;func (s *Session) DB(name string) *Database&lt;/li&gt;
+    &lt;li&gt;func (db *Database) C(name string) *Collection&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;This is really coherent as conventions say that if one method returns a pointer receiver, all of them should. But it doesn’t really help us.&lt;/p&gt;
+
+&lt;p&gt;A solution to put it in place is a succession of interfaces and structs that will slightly modify the return values of the methods listed before.&lt;/p&gt;
+
+&lt;p&gt;To do that, let’s start by abstracting the first struct we use from Mgo, the session :&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-go&quot; data-lang=&quot;go&quot;&gt;&lt;span class=&quot;c1&quot;&gt;// Session is an interface to access to the Session struct.&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Session&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;interface&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;nx&quot;&gt;DB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;name&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;DataLayer&lt;/span&gt;
+	&lt;span class=&quot;nx&quot;&gt;Close&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// MongoSession is currently a Mongo session.&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;MongoSession&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;mgo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Session&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// DB shadows *mgo.DB to returns a DataLayer interface instead of *mgo.Database.&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;s&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;MongoSession&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;DB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;name&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;DataLayer&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;MongoDatabase&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Database&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Session&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;DB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// DataLayer is an interface to access to the database struct.&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;DataLayer&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;interface&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;nx&quot;&gt;C&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;name&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Collection&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;We can implement the structs for the mock as follows :&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-go&quot; data-lang=&quot;go&quot;&gt;&lt;span class=&quot;c1&quot;&gt;// MockSession satisfies Session and act as a mock of *mgo.session.&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;MockSession&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;struct&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{}&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// NewMockSession mock NewSession.&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;NewMockSession&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Session&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;MockSession&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// Close mocks mgo.Session.Close().&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;fs&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;MockSession&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Close&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{}&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// DB mocks mgo.Session.DB().&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;fs&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;MockSession&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;DB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;name&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;DataLayer&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;nx&quot;&gt;mockDatabase&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:=&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;MockDatabase&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{}&lt;/span&gt;
+	&lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;mockDatabase&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Now it’s totally possible to create/manipulate an interface :&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-go&quot; data-lang=&quot;go&quot;&gt;&lt;span class=&quot;c1&quot;&gt;// NewSession returns a new Mongo Session.&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;NewSession&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Session&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;nx&quot;&gt;mgoSession&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;err&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:=&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;mgo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Dial&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;lt;MONGO_URI&amp;gt;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;err&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!=&lt;/span&gt; &lt;span class=&quot;kc&quot;&gt;nil&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;nb&quot;&gt;panic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;err&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+	&lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;MongoSession&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;mgoSession&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// OR&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// NewMockSession mock NewSession.&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;NewMockSession&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Session&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;MockSession&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;N.B: In the case of mock session, no external calls are made.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;We can then replicate that strategy with the database and the collection.
+Note that for the sake of simplicity, the interfaces contain the bare minimum number of methods but if you plan to use more methods of the Collection or Database structs, you should add them to the interfaces.&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-go&quot; data-lang=&quot;go&quot;&gt;&lt;span class=&quot;c1&quot;&gt;// MongoCollection wraps a mgo.Collection to embed methods in models.&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;MongoCollection&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;mgo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Collection&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// Collection is an interface to access to the collection struct.&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Collection&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;interface&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;nx&quot;&gt;Find&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;query&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;interface&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{})&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;mgo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Query&lt;/span&gt;
+	&lt;span class=&quot;nx&quot;&gt;Count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;n&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;err&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;error&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+	&lt;span class=&quot;nx&quot;&gt;Insert&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;docs&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;...&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;interface&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{})&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;error&lt;/span&gt;
+	&lt;span class=&quot;nx&quot;&gt;Remove&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;selector&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;interface&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{})&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;error&lt;/span&gt;
+	&lt;span class=&quot;nx&quot;&gt;Update&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;selector&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;interface&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{},&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;update&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;interface&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{})&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;error&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// MongoDatabase wraps a mgo.Database to embed methods in models.&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;MongoDatabase&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;mgo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Database&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// C shadows *mgo.DB to returns a DataLayer interface instead of *mgo.Database.&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;d&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;MongoDatabase&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;C&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;name&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Collection&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;MongoCollection&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Collection&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;d&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Database&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;C&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;and for the mock :&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-go&quot; data-lang=&quot;go&quot;&gt;&lt;span class=&quot;c1&quot;&gt;// MockDatabase satisfies DataLayer and act as a mock.&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;MockDatabase&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;struct&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{}&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// MockCollection satisfies Collection and act as a mock.&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;MockCollection&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;struct&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{}&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// Find mock.&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;fc&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;MockCollection&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Find&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;query&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;interface&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{})&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;mgo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Query&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;kc&quot;&gt;nil&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// Count mock.&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;fc&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;MockCollection&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;n&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;err&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;error&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kc&quot;&gt;nil&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// Insert mock.&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;fc&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;MockCollection&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Insert&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;docs&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;...&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;interface&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{})&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;error&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;kc&quot;&gt;nil&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// Remove mock.&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;fc&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;MockCollection&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Remove&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;selector&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;interface&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{})&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;error&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;kc&quot;&gt;nil&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// Update mock.&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;fc&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;MockCollection&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Update&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;selector&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;interface&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{},&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;update&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;interface&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{})&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;error&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;kc&quot;&gt;nil&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// C mocks mgo.Database(name).Collection(name).&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;db&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;MockDatabase&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;C&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;name&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Collection&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;MockCollection&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;All of our functions will then deal with interfaces instead of the underlying structs (&lt;em&gt;that can be either a real database or a mock&lt;/em&gt;).&lt;/p&gt;
+
+&lt;p&gt;This solution is also great because it gives us an abstract layer. We can use the interfaces from the model in a handler, for example. The resulting codebase will be less coupled to the database solution we picked (&lt;em&gt;in this case Mongodb&lt;/em&gt;) and easier to test.
+Note that in this post, I give you only one of the possibilities to Mock, the one that made the most sense to me. You don’t have to mock all the way from the session to the query structs. It really depends on your test strategy.
+You can also use &lt;a href=&quot;https://github.com/golang/mock&quot;&gt;GoMock&lt;/a&gt; package even though interfaces do the job.&lt;/p&gt;
+
+&lt;p&gt;You can find an example of a real use case in &lt;a href=&quot;http://github.com/thylong/regexrace&quot;&gt;RegexRace&lt;/a&gt; repository. The code shown above can also be found in &lt;a href=&quot;http://github.com/thylong/mongo_mock_go_example&quot;&gt;this repository&lt;/a&gt;.
+Feel free to ask me any questions in the comments or to open issues on Github.&lt;/p&gt;
+
+&lt;p&gt;If you’re interested in Golang testing techniques, I suggest that you watch the &lt;a href=&quot;https://www.youtube.com/watch?v=yszygk1cpEc&quot;&gt;great talk&lt;/a&gt; of &lt;a href=&quot;http://mitchellh.com/&quot;&gt;Mitchell Hashimoto&lt;/a&gt; and if you enjoyed this article, don’t hesitate to star the repository or share it ;)&lt;/p&gt;
+
+&lt;p&gt;Cheers !&lt;/p&gt;
+
+</description>
+        <pubDate>Sat, 22 Oct 2016 11:00:00 +0200</pubDate>
+        <link>http://thylong.com/golang/2016/mocking-mongo-in-golang/</link>
+        <guid isPermaLink="true">http://thylong.com/golang/2016/mocking-mongo-in-golang/</guid>
+        
+        
+        <category>golang</category>
+        
+      </item>
+    
+      <item>
+        <title>Deploying from Travis-CI to Google Container Engine</title>
+        <description>&lt;h2&gt;Deploying from Travis-CI to Google Container Engine&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://travis-ci.com&quot;&gt;Travis-ci&lt;/a&gt; is a great &lt;a href=&quot;https://en.wikipedia.org/wiki/Continuous_integration&quot;&gt;CI&lt;/a&gt; tool.
+In comparison to other solutions, it has the advantage of being free for Open Source projects and is well documented.&lt;/p&gt;
+
+&lt;p&gt;This is why I’ve been using it for a while and more recently with &lt;a href=&quot;http://regexrace.org&quot;&gt;regexrace&lt;/a&gt;, a project hosted in &lt;a href=&quot;https://cloud.google.com/container-engine/&quot;&gt;Google Container Engine cluster&lt;/a&gt;.
+Since &lt;a href=&quot;http://kubernetes.io/&quot;&gt;Kubernetes&lt;/a&gt; abstracts much of the deployment and management processes, the only thing we have to handle is how to trigger the deployment.&lt;/p&gt;
+
+&lt;p&gt;Which is incredibly simple once you’ve setup the gcloud CLI :&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;kubectl apply -f my_replica_controller_config.yml
+kubectl rolling-update my_replica_controller --image&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;gcr.io/my_project/my_project:the_project_version --image-pull-policy Always&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;But if you try to create a bash script and trigger it from Travis you may encounter these errors :&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;Unable to connect to the server: dial tcp &amp;lt;your_cluster_ip&amp;gt;: i/o timeout
+&lt;span class=&quot;c&quot;&gt;# OR&lt;/span&gt;
+error: You must be logged in to the server &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;the server has asked &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; the client to provide credentials&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;To get rid of these errors, we’ll have to ensure kubectl is using the right credentials every time we use it.&lt;/p&gt;
+
+&lt;h3&gt;If you didn&#39;t set up travis yet&lt;/h3&gt;
+&lt;p&gt;To set up gcloud in Travis and push the Docker build to &lt;a href=&quot;https://cloud.google.com/container-registry/&quot;&gt;Google Container Registry&lt;/a&gt;, you should either read &lt;a href=&quot;http://scottsmerchek.com/2015/07/24/pushing-to-google-container-registry-from-circleci/&quot;&gt;the good article&lt;/a&gt; of Scott Smerchek or (the very-fast way),
+to copy/paste the following lines and set up the related environment variables in your Travis project settings :&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-yaml&quot; data-lang=&quot;yaml&quot;&gt;&lt;span class=&quot;l-Scalar-Plain&quot;&gt;cache&lt;/span&gt;&lt;span class=&quot;p-Indicator&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;l-Scalar-Plain&quot;&gt;directories&lt;/span&gt;&lt;span class=&quot;p-Indicator&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;p-Indicator&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;$HOME/google-cloud-sdk/&amp;quot;&lt;/span&gt;
+&lt;span class=&quot;l-Scalar-Plain&quot;&gt;after_success&lt;/span&gt;&lt;span class=&quot;p-Indicator&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;p-Indicator&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;l-Scalar-Plain&quot;&gt;if [ ! -d &amp;quot;$HOME/google-cloud-sdk/bin&amp;quot; ]; then rm -rf $HOME/google-cloud-sdk; curl https://sdk.cloud.google.com | bash; fi&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;# Add gcloud to $PATH&lt;/span&gt;
+  &lt;span class=&quot;p-Indicator&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;l-Scalar-Plain&quot;&gt;source /home/travis/google-cloud-sdk/path.bash.inc&lt;/span&gt;
+  &lt;span class=&quot;p-Indicator&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;l-Scalar-Plain&quot;&gt;gcloud version&lt;/span&gt;
+  &lt;span class=&quot;p-Indicator&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;l-Scalar-Plain&quot;&gt;gcloud --quiet components update kubectl&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;# Auth flow&lt;/span&gt;
+  &lt;span class=&quot;p-Indicator&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;l-Scalar-Plain&quot;&gt;echo $GCLOUD_KEY | base64 --decode &amp;gt; gcloud.p12&lt;/span&gt;
+  &lt;span class=&quot;p-Indicator&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;l-Scalar-Plain&quot;&gt;gcloud auth activate-service-account $GCLOUD_EMAIL --key-file gcloud.p12&lt;/span&gt;
+  &lt;span class=&quot;p-Indicator&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;l-Scalar-Plain&quot;&gt;ssh-keygen -f ~/.ssh/google_compute_engine -N &amp;quot;&amp;quot;&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;# Push to Google container registry&lt;/span&gt;
+  &lt;span class=&quot;p-Indicator&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;l-Scalar-Plain&quot;&gt;docker build -t gcr.io/$CLOUDSDK_CORE_PROJECT/$CLOUDSDK_CORE_PROJECT:v1 .&lt;/span&gt;
+  &lt;span class=&quot;p-Indicator&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;l-Scalar-Plain&quot;&gt;gcloud docker push gcr.io/$CLOUDSDK_CORE_PROJECT/$CLOUDSDK_CORE_PROJECT:v1 &amp;gt; /dev/null&lt;/span&gt;
+  &lt;span class=&quot;p-Indicator&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;l-Scalar-Plain&quot;&gt;gcloud container clusters get-credentials $CLOUDSDK_CORE_PROJECT&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Related environment variables :&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Env variables&lt;/th&gt;
+      &lt;th style=&quot;text-align: left&quot;&gt;Content&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;GCLOUD_KEY&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;&lt;code&gt;base64-encoded version of project_name-xxxxx.json&lt;/code&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;GCLOUD_EMAIL&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;&lt;code&gt;{string_of_characters}@developer.gserviceaccount.com&lt;/code&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;CLOUDSDK_CORE_DISABLE_PROMPTS&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;&lt;code&gt;1&lt;/code&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;CLOUDSDK_CORE_PROJECT&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;&lt;code&gt;your_project_name_on_gcloud&lt;/code&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;CLOUDSDK_COMPUTE_ZONE&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;&lt;code&gt;us-east1-b&lt;/code&gt; &lt;em&gt;(for example)&lt;/em&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;GKE_USERNAME&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;&lt;code&gt;the_cluster_username&lt;/code&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;GKE_PASSWORD&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;&lt;code&gt;the_cluster_password&lt;/code&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;GKE_SERVER&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;&lt;code&gt;the_cluster_ip&lt;/code&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h3&gt;Let&#39;s fix the kubectl command&lt;/h3&gt;
+
+&lt;p&gt;After getting all of these errors, I tried to get some debug logs and looked into the gcloud manual pages and Github issues. Finally, I found an explanation on &lt;a href=&quot;https://github.com/kubernetes/kubernetes/issues/28612&quot;&gt;a Github issue&lt;/a&gt; and one of the last comment of zeg-io.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Your ~/.kube/config is missing some value for authentication. To resolve this, run the command below on your gcloud shell (Google Console):
+$ export GOOGLE_APPLICATION_CREDENTIALS=”/path/to/keyfile.json”&lt;/p&gt;
+
+  &lt;p&gt;Next, you’ll need to run the get-credentials command below again to fetch credentials for a running cluster.
+$ gcloud container clusters get-credentials project-cluster-1 –zone us-central1-c&lt;/p&gt;
+
+  &lt;p&gt;Then, you may now run ‘kubectl proxy’ command again and let me know if you’re still having trouble.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;So,&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;gcloud container clusters get-credentials &lt;span class=&quot;nv&quot;&gt;$CLOUDSDK_CORE_PROJECT&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;requires you to store a JSON file containing the credentials.&lt;/p&gt;
+
+&lt;p&gt;As we have it stored in the &lt;code&gt;$GCLOUD_KEY&lt;/code&gt; environment variable and we decoded it into a &lt;code&gt;gcloud.p12&lt;/code&gt; file, we can set the content of &lt;code&gt;$GOOGLE_APPLICATION_CREDENTIALS&lt;/code&gt; to the path of that file.&lt;/p&gt;
+
+&lt;p&gt;For example :&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$GOOGLE_APPLICATION_CREDENTIALS&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;/home/travis/gopath/src/github.com/thylong/regexrace/gcloud.p12&amp;quot;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;The final result can be seen &lt;a href=&quot;http://github.com/thylong/regexrace&quot;&gt;here&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Enjoy !
+Don’t hesitate to comment / open pull requests or issues on the regexrace project.&lt;/p&gt;
+
+</description>
+        <pubDate>Wed, 12 Oct 2016 11:00:00 +0200</pubDate>
+        <link>http://thylong.com/ci/2016/deploying-from-travis-to-gce/</link>
+        <guid isPermaLink="true">http://thylong.com/ci/2016/deploying-from-travis-to-gce/</guid>
+        
+        
+        <category>ci</category>
+        
+      </item>
+    
+      <item>
+        <title>Welcome to Cabu !</title>
+        <description>&lt;p&gt;Today, I decided to open source &lt;a href=&quot;https://github.com/thylong/cabu&quot;&gt;Cabu&lt;/a&gt;, my first Open Source project.
+It’s a framework to create crawler as microservices.&lt;/p&gt;
+
+&lt;h2&gt;Why another crawling framework in Python ?&lt;/h2&gt;
+
+&lt;p&gt;It’s been a while, that I was creating crawlers associated with schedulers
+hosted on AWS. As many developers, I faced the lack of features of some actual
+crawling projects, the time consuming configuration of Selenium webdrivers
+(particularly when you want to use it headless), the lack of modern apps
+architecture in some scraping projects, etc. I thought that maybe releasing the
+architecture I’m using must be interesting for some Pythonistas.&lt;/p&gt;
+
+&lt;p&gt;So after few weeks refactoring the stack, ensuring that the codebase is well
+tested and writing documentation, It’s finally ready to be shown to the world !
+There is a lot of things still to do but already enough to play around and avoid
+you some headaches in the world of crawling :-)&lt;/p&gt;
+
+&lt;h2&gt;How does it work ?&lt;/h2&gt;
+
+&lt;p&gt;After installing the Python package using pip and a Selenium web driver, you can
+create in a matter of seconds a crawler like in this example :&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;span class=&quot;nd&quot;&gt;@app.route&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;/gizmodo_last_articles_links&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;gizmodo_last_articles&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;():&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;app&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;webdriver&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;http://www.gizmodo.com&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;articles_links&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;get_attribute&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;href&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;ow&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;app&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;webdriver&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;find_elements_by_css_selector&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;h1.headline&amp;gt;a&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;jsonify&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;({&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;articles&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;articles_links&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;})&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;#=&amp;gt; http myapp.io/gizmodo_last_articles_links&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;And that’s it !
+There are already a bunch of features and lot more to come.
+Actually, I’m already using some of the future features, but I want to release
+them once I’m sure it’s ready to be open sourced (Better be safe than sorry).
+They are listed on the &lt;a href=&quot;https://cabu.readthedocs.org/en/latest/changelog.html&quot;&gt;changelog page&lt;/a&gt; of the
+&lt;a href=&quot;https://cabu.readthedocs.org/en/latest/index.html&quot;&gt;documentation&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Thanks to &lt;a href=&quot;https://github.com/sofiama&quot;&gt;Sofia&lt;/a&gt; and Trisha for the patience to have a look to the
+documentation and fixing my english.
+Thanks to Maréva for the beautiful illustration of the robot.&lt;/p&gt;
+
+&lt;p&gt;I hope it will be useful to you. Feel free to create pull-requests and make any
+improvements suggestions.&lt;/p&gt;
+
+&lt;p&gt;Cheers.&lt;/p&gt;
+
+</description>
+        <pubDate>Wed, 06 Jan 2016 10:00:00 +0100</pubDate>
+        <link>http://thylong.com/open-source/2016/welcome-cabu/</link>
+        <guid isPermaLink="true">http://thylong.com/open-source/2016/welcome-cabu/</guid>
+        
+        
+        <category>open-source</category>
+        
+      </item>
+    
+  </channel>
+</rss>

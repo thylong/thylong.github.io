@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url>
+<loc>http://thylong.com/debug/2016/fish-history-frozen/</loc>
+<lastmod>2016-12-02T10:00:00+01:00</lastmod>
+</url>
+<url>
+<loc>http://thylong.com/golang/2016/mocking-mongo-in-golang/</loc>
+<lastmod>2016-10-22T11:00:00+02:00</lastmod>
+</url>
+<url>
+<loc>http://thylong.com/ci/2016/deploying-from-travis-to-gce/</loc>
+<lastmod>2016-10-12T11:00:00+02:00</lastmod>
+</url>
+<url>
+<loc>http://thylong.com/open-source/2016/welcome-cabu/</loc>
+<lastmod>2016-01-06T10:00:00+01:00</lastmod>
+</url>
+<url>
+<loc>http://thylong.com/about/</loc>
+</url>
+<url>
+<loc>http://thylong.com/</loc>
+</url>
+</urlset>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+<title> Mocking Mongo in Golang | blog</title>
+<meta name="description" content="A usecase of interfaces to mock.">
+<meta name="keywords" content="golang, interface, mongodb, mongo, mock, testing, mgo">
+<link rel="stylesheet" href="/css/main.css">
+<link rel="canonical" href="http://thylong.com/golang/2016/mocking-mongo-in-golang/">
+<link rel="alternate" type="application/rss+xml" title="blog" href="http://thylong.com/feed.xml" />
+<script type="text/javascript">
+var _gaq = _gaq || [];
+_gaq.push(['_setAccount', 'UA-85600279-1']);
+_gaq.push(['_trackPageview']);
+(function() {
+  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+})();
+</script>
+<script>base_url = "";</script>
+  </head>
+  <body class="single">
+    <main class="main-container">
+        <header class="site-header">
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="/about">about</a></li>
+        <!-- <li><a href="http://github.com/thylong/about" target="_blank">the author</a></li> -->
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+      <h1 class="post-title">Mocking Mongo in Golang</h1>
+      <p class="post-meta">Oct 22, 2016</p>
+  </div>
+</header>
+        <section class="main-content">
+          <article class="post">
+  <div class="post-content container">
+    <h2>Mocking Mongo in Golang</h2>
+<p>People coming from non-statically typed languages might be lost when it comes to mocking things in <a href="http://www.unixstickers.com/image/cache/data/stickers/golang/golang.sh-600x600.png">Golang</a>.
+This is especially true if you come to Go with a Python background and are used to using Python’s wonderful <a href="https://docs.python.org/3/library/unittest.mock.html">mock</a> built-in library.
+Although thanks to the power of interfaces and the great design of <a href="https://labix.org/mgo">Mgo</a> driver, it’s relatively simple to Mock it.</p>
+<h3>Let's go</h3>
+<p>First, let’s notice that the commonly used Mgo methods accept a pointer receiver and return a pointer receiver of the same package.</p>
+<p>For example, look at these signatures :</p>
+<blockquote>
+  <ul>
+    <li>func Dial(url string) (*Session, error)</li>
+    <li>func (s *Session) DB(name string) *Database</li>
+    <li>func (db *Database) C(name string) *Collection</li>
+  </ul>
+</blockquote>
+<p>This is really coherent as conventions say that if one method returns a pointer receiver, all of them should. But it doesn’t really help us.</p>
+<p>A solution to put it in place is a succession of interfaces and structs that will slightly modify the return values of the methods listed before.</p>
+<p>To do that, let’s start by abstracting the first struct we use from Mgo, the session :</p>
+<div class="highlight"><pre><code class="language-go" data-lang="go"><span class="c1">// Session is an interface to access to the Session struct.</span>
+<span class="kd">type</span> <span class="nx">Session</span> <span class="kd">interface</span> <span class="p">{</span>
+	<span class="nx">DB</span><span class="p">(</span><span class="nx">name</span> <span class="kt">string</span><span class="p">)</span> <span class="nx">DataLayer</span>
+	<span class="nx">Close</span><span class="p">()</span>
+<span class="p">}</span>
+<span class="c1">// MongoSession is currently a Mongo session.</span>
+<span class="kd">type</span> <span class="nx">MongoSession</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="o">*</span><span class="nx">mgo</span><span class="p">.</span><span class="nx">Session</span>
+<span class="p">}</span>
+<span class="c1">// DB shadows *mgo.DB to returns a DataLayer interface instead of *mgo.Database.</span>
+<span class="kd">func</span> <span class="p">(</span><span class="nx">s</span> <span class="nx">MongoSession</span><span class="p">)</span> <span class="nx">DB</span><span class="p">(</span><span class="nx">name</span> <span class="kt">string</span><span class="p">)</span> <span class="nx">DataLayer</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="o">&amp;</span><span class="nx">MongoDatabase</span><span class="p">{</span><span class="nx">Database</span><span class="p">:</span> <span class="nx">s</span><span class="p">.</span><span class="nx">Session</span><span class="p">.</span><span class="nx">DB</span><span class="p">(</span><span class="nx">name</span><span class="p">)}</span>
+<span class="p">}</span>
+<span class="c1">// DataLayer is an interface to access to the database struct.</span>
+<span class="kd">type</span> <span class="nx">DataLayer</span> <span class="kd">interface</span> <span class="p">{</span>
+	<span class="nx">C</span><span class="p">(</span><span class="nx">name</span> <span class="kt">string</span><span class="p">)</span> <span class="nx">Collection</span>
+<span class="p">}</span></code></pre></div>
+<p>We can implement the structs for the mock as follows :</p>
+<div class="highlight"><pre><code class="language-go" data-lang="go"><span class="c1">// MockSession satisfies Session and act as a mock of *mgo.session.</span>
+<span class="kd">type</span> <span class="nx">MockSession</span> <span class="kd">struct</span><span class="p">{}</span>
+<span class="c1">// NewMockSession mock NewSession.</span>
+<span class="kd">func</span> <span class="nx">NewMockSession</span><span class="p">()</span> <span class="nx">Session</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="nx">MockSession</span><span class="p">{}</span>
+<span class="p">}</span>
+<span class="c1">// Close mocks mgo.Session.Close().</span>
+<span class="kd">func</span> <span class="p">(</span><span class="nx">fs</span> <span class="nx">MockSession</span><span class="p">)</span> <span class="nx">Close</span><span class="p">()</span> <span class="p">{}</span>
+<span class="c1">// DB mocks mgo.Session.DB().</span>
+<span class="kd">func</span> <span class="p">(</span><span class="nx">fs</span> <span class="nx">MockSession</span><span class="p">)</span> <span class="nx">DB</span><span class="p">(</span><span class="nx">name</span> <span class="kt">string</span><span class="p">)</span> <span class="nx">DataLayer</span> <span class="p">{</span>
+	<span class="nx">mockDatabase</span> <span class="o">:=</span> <span class="nx">MockDatabase</span><span class="p">{}</span>
+	<span class="k">return</span> <span class="nx">mockDatabase</span>
+<span class="p">}</span></code></pre></div>
+<p>Now it’s totally possible to create/manipulate an interface :</p>
+<div class="highlight"><pre><code class="language-go" data-lang="go"><span class="c1">// NewSession returns a new Mongo Session.</span>
+<span class="kd">func</span> <span class="nx">NewSession</span><span class="p">()</span> <span class="nx">Session</span> <span class="p">{</span>
+	<span class="nx">mgoSession</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">mgo</span><span class="p">.</span><span class="nx">Dial</span><span class="p">(</span><span class="s">&quot;&lt;MONGO_URI&gt;&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+        <span class="nb">panic</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+    <span class="p">}</span>
+	<span class="k">return</span> <span class="nx">MongoSession</span><span class="p">{</span><span class="nx">mgoSession</span><span class="p">}</span>
+<span class="p">}</span>
+<span class="c1">// OR</span>
+<span class="c1">// NewMockSession mock NewSession.</span>
+<span class="kd">func</span> <span class="nx">NewMockSession</span><span class="p">()</span> <span class="nx">Session</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="nx">MockSession</span><span class="p">{}</span>
+<span class="p">}</span></code></pre></div>
+<blockquote>
+  <p>N.B: In the case of mock session, no external calls are made.</p>
+</blockquote>
+<p>We can then replicate that strategy with the database and the collection.
+Note that for the sake of simplicity, the interfaces contain the bare minimum number of methods but if you plan to use more methods of the Collection or Database structs, you should add them to the interfaces.</p>
+<div class="highlight"><pre><code class="language-go" data-lang="go"><span class="c1">// MongoCollection wraps a mgo.Collection to embed methods in models.</span>
+<span class="kd">type</span> <span class="nx">MongoCollection</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="o">*</span><span class="nx">mgo</span><span class="p">.</span><span class="nx">Collection</span>
+<span class="p">}</span>
+<span class="c1">// Collection is an interface to access to the collection struct.</span>
+<span class="kd">type</span> <span class="nx">Collection</span> <span class="kd">interface</span> <span class="p">{</span>
+	<span class="nx">Find</span><span class="p">(</span><span class="nx">query</span> <span class="kd">interface</span><span class="p">{})</span> <span class="o">*</span><span class="nx">mgo</span><span class="p">.</span><span class="nx">Query</span>
+	<span class="nx">Count</span><span class="p">()</span> <span class="p">(</span><span class="nx">n</span> <span class="kt">int</span><span class="p">,</span> <span class="nx">err</span> <span class="kt">error</span><span class="p">)</span>
+	<span class="nx">Insert</span><span class="p">(</span><span class="nx">docs</span> <span class="o">...</span><span class="kd">interface</span><span class="p">{})</span> <span class="kt">error</span>
+	<span class="nx">Remove</span><span class="p">(</span><span class="nx">selector</span> <span class="kd">interface</span><span class="p">{})</span> <span class="kt">error</span>
+	<span class="nx">Update</span><span class="p">(</span><span class="nx">selector</span> <span class="kd">interface</span><span class="p">{},</span> <span class="nx">update</span> <span class="kd">interface</span><span class="p">{})</span> <span class="kt">error</span>
+<span class="p">}</span>
+<span class="c1">// MongoDatabase wraps a mgo.Database to embed methods in models.</span>
+<span class="kd">type</span> <span class="nx">MongoDatabase</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="o">*</span><span class="nx">mgo</span><span class="p">.</span><span class="nx">Database</span>
+<span class="p">}</span>
+<span class="c1">// C shadows *mgo.DB to returns a DataLayer interface instead of *mgo.Database.</span>
+<span class="kd">func</span> <span class="p">(</span><span class="nx">d</span> <span class="nx">MongoDatabase</span><span class="p">)</span> <span class="nx">C</span><span class="p">(</span><span class="nx">name</span> <span class="kt">string</span><span class="p">)</span> <span class="nx">Collection</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="o">&amp;</span><span class="nx">MongoCollection</span><span class="p">{</span><span class="nx">Collection</span><span class="p">:</span> <span class="nx">d</span><span class="p">.</span><span class="nx">Database</span><span class="p">.</span><span class="nx">C</span><span class="p">(</span><span class="nx">name</span><span class="p">)}</span>
+<span class="p">}</span></code></pre></div>
+<p>and for the mock :</p>
+<div class="highlight"><pre><code class="language-go" data-lang="go"><span class="c1">// MockDatabase satisfies DataLayer and act as a mock.</span>
+<span class="kd">type</span> <span class="nx">MockDatabase</span> <span class="kd">struct</span><span class="p">{}</span>
+<span class="c1">// MockCollection satisfies Collection and act as a mock.</span>
+<span class="kd">type</span> <span class="nx">MockCollection</span> <span class="kd">struct</span><span class="p">{}</span>
+<span class="c1">// Find mock.</span>
+<span class="kd">func</span> <span class="p">(</span><span class="nx">fc</span> <span class="nx">MockCollection</span><span class="p">)</span> <span class="nx">Find</span><span class="p">(</span><span class="nx">query</span> <span class="kd">interface</span><span class="p">{})</span> <span class="o">*</span><span class="nx">mgo</span><span class="p">.</span><span class="nx">Query</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="kc">nil</span>
+<span class="p">}</span>
+<span class="c1">// Count mock.</span>
+<span class="kd">func</span> <span class="p">(</span><span class="nx">fc</span> <span class="nx">MockCollection</span><span class="p">)</span> <span class="nx">Count</span><span class="p">()</span> <span class="p">(</span><span class="nx">n</span> <span class="kt">int</span><span class="p">,</span> <span class="nx">err</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="mi">10</span><span class="p">,</span> <span class="kc">nil</span>
+<span class="p">}</span>
+<span class="c1">// Insert mock.</span>
+<span class="kd">func</span> <span class="p">(</span><span class="nx">fc</span> <span class="nx">MockCollection</span><span class="p">)</span> <span class="nx">Insert</span><span class="p">(</span><span class="nx">docs</span> <span class="o">...</span><span class="kd">interface</span><span class="p">{})</span> <span class="kt">error</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="kc">nil</span>
+<span class="p">}</span>
+<span class="c1">// Remove mock.</span>
+<span class="kd">func</span> <span class="p">(</span><span class="nx">fc</span> <span class="nx">MockCollection</span><span class="p">)</span> <span class="nx">Remove</span><span class="p">(</span><span class="nx">selector</span> <span class="kd">interface</span><span class="p">{})</span> <span class="kt">error</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="kc">nil</span>
+<span class="p">}</span>
+<span class="c1">// Update mock.</span>
+<span class="kd">func</span> <span class="p">(</span><span class="nx">fc</span> <span class="nx">MockCollection</span><span class="p">)</span> <span class="nx">Update</span><span class="p">(</span><span class="nx">selector</span> <span class="kd">interface</span><span class="p">{},</span> <span class="nx">update</span> <span class="kd">interface</span><span class="p">{})</span> <span class="kt">error</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="kc">nil</span>
+<span class="p">}</span>
+<span class="c1">// C mocks mgo.Database(name).Collection(name).</span>
+<span class="kd">func</span> <span class="p">(</span><span class="nx">db</span> <span class="nx">MockDatabase</span><span class="p">)</span> <span class="nx">C</span><span class="p">(</span><span class="nx">name</span> <span class="kt">string</span><span class="p">)</span> <span class="nx">Collection</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="nx">MockCollection</span><span class="p">{}</span>
+<span class="p">}</span></code></pre></div>
+<p>All of our functions will then deal with interfaces instead of the underlying structs (<em>that can be either a real database or a mock</em>).</p>
+<p>This solution is also great because it gives us an abstract layer. We can use the interfaces from the model in a handler, for example. The resulting codebase will be less coupled to the database solution we picked (<em>in this case Mongodb</em>) and easier to test.
+Note that in this post, I give you only one of the possibilities to Mock, the one that made the most sense to me. You don’t have to mock all the way from the session to the query structs. It really depends on your test strategy.
+You can also use <a href="https://github.com/golang/mock">GoMock</a> package even though interfaces do the job.</p>
+<p>You can find an example of a real use case in <a href="http://github.com/thylong/regexrace">RegexRace</a> repository. The code shown above can also be found in <a href="http://github.com/thylong/mongo_mock_go_example">this repository</a>.
+Feel free to ask me any questions in the comments or to open issues on Github.</p>
+<p>If you’re interested in Golang testing techniques, I suggest that you watch the <a href="https://www.youtube.com/watch?v=yszygk1cpEc">great talk</a> of <a href="http://mitchellh.com/">Mitchell Hashimoto</a> and if you enjoyed this article, don’t hesitate to star the repository or share it ;)</p>
+<p>Cheers !</p>
+    <aside class="share">
+      <span>Share this: </span>
+      <a href="http://twitter.com/share?text=Mocking Mongo in Golang&amp;url=http://thylong.com/golang/2016/mocking-mongo-in-golang/&amp;hashtags=web,dev,blog,soudev&amp;via=thylnheo"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+      <a href="https://www.facebook.com/sharer/sharer.php?u=http://thylong.com/golang/2016/mocking-mongo-in-golang/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+    </aside>
+  </div>
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+      <script type="text/javascript">
+        var disqus_shortname = 'thylonggithubio';
+        var disqus_identifier = '/golang/2016/mocking-mongo-in-golang';
+        var disqus_title = 'Mocking Mongo in Golang';
+        var disqus_url = 'http://thylong.com/golang/2016/mocking-mongo-in-golang/';
+        /*var disqus_developer = 1;*/
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+</article>
+        </section>
+<div class="clearfix"></div>
+<footer class="site-footer txt-center">
+  <hr>
+  <ul class="social">
+  </ul>
+  <small>&copy; 2017 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+</footer>
+    </main>
+    <a href="http://github.com/thylong/thylong.github.io" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>
